@@ -1,0 +1,873 @@
+---
+title: "Hand R DataVis Final Webpage"
+author: "Andrew Hand"
+date: "01/05/2025"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Data Visualization in R: Hand Directory {.tabset .tabset-fade .tabset-pills}
+
+## Data Vis Modules {.tabset .tabset-fade .tabset-pills}
+#### This section includes code from all past modules from Data Visualization in R course. 
+
+### Module 1
+#### GGPLOT Basics
+
+```{r,message=F, warning=FALSE}
+# List any packages you need to use here
+packages <- c("ggplot2", "readr", "tidyverse", "dplyr", "ggpubr")
+
+#Check to see if any of your listed packages need installed
+check_install_packages <- function(pkg){
+  if (!require(pkg, character.only = TRUE)) {
+    install.packages(pkg, dependencies = TRUE)
+    library(pkg, character.only = TRUE)
+  }
+}
+
+# Download the packages and read in the libraries if necessary
+sapply(packages, check_install_packages)
+
+data("USArrests")
+view(USArrests)
+head(USArrests)
+?USArrests
+```
+
+USArrests data questions: 
+1: What are the variables available? 
+murder, assault, urbanpop, and rape 
+
+2: How is each variable defined or calculated? 
+muder, assault, and rape are numeric values calculated for one per 100,000 arrests
+urbanpop is defined as the percent urban population
+
+3: Is each one numerical or categorical? 
+each is numerical 
+
+Horsepower Plot:
+```{r,message=F, warning=FALSE}
+# libraries 
+library(ggplot2)
+#General format is going to be calling a ggplot, followed by the dataframe name (mtcars), followed by defining the X and Y variables of the graphic.
+data("mtcars")  
+ggplot(mtcars, aes(x = mpg, y=hp)) +
+    #You then indicate the type of graph to make (in this case, a dotplot using points).
+    geom_point() +
+  #changing dots to size 2.4 and star shaped
+  geom_point(size = 2.4, shape = 8) +
+  #change theme to minimal 
+  theme_minimal() +
+  #create cyl column into a color gradient 
+  aes(colour = cyl) +
+  #change the legend position
+  theme(legend.position = "bottom") +
+  #labeling the graph
+  labs(title = "Effect of Horsepower on Fuel Efficiency", subtitle = "Categorized by Number of Cylinders", x = "Horsepower", y = "Fuel Efficiency (MPG)")
+```
+
+Iris Plot:
+```{r,message=F, warning=FALSE}
+#using a different demo data set to create another graph 
+library(ggplot2)
+data(Irisi)
+#create plot
+ggplot(iris, aes(x = Species, y = Petal.Length, fill = Species)) + geom_boxplot() +
+  #change theme
+  theme_classic() +
+  #labels
+  labs(title = "Patel Length of Iris by Species") + 
+  #custom legend position
+  theme(legend.position = c(0.2,0.8))
+```
+
+### Module 2 
+#### Scatter Plots, Dot Plots, Strip Charts, and Line Plots
+
+task 1: Scatter Plot and Regression Line: 
+```{r,message=F, warning=FALSE}
+#Load data 
+data("USArrests")
+#view the data set 
+head(USArrests)
+#load proper packages
+library(ggplot2)
+#create a scatter plot with the chosen x and y variables
+ggplot(USArrests, aes(y = Assault, x =Murder)) + geom_point() +
+  #set theme 
+  theme_classic() + 
+  #add labels 
+  labs(title = "Scatter Plot of Assault vs. Murder Rates", x = "Murder Rate", y = 
+         "Assault Rate") + 
+  #add a linear model regression line 
+    geom_smooth(method = lm, color = "black", fill = "red") + 
+  #changing aesthetics 
+  geom_point(size = 3.5, shape = 21, fill = "lightblue") + 
+  #change the font sizes a little 
+  theme(plot.title = element_text(size=16, face = "bold"), axis.title.x = element_text(size = 14), axis.title.y = element_text(size = 14))
+```
+
+Task 2: Challenge Line Plot Creation:
+```{r,message=F, warning=FALSE}
+#create a new column for the states
+USArrests$State <- rownames(USArrests)
+#creating a column for the means
+USArrests$AverageCrimeRate <- rowMeans(USArrests[, c("Murder", "Assault", "Rape")])
+
+# Create the line plot
+ggplot(data = USArrests, aes(x = State, y = AverageCrimeRate, group = 1)) +
+  geom_line(color = "steelblue", size = 1) +  # Line
+  geom_point(color = "red", size = 3) +   # Points
+  labs(title = "Line Plot of Average Crime Rate by State",
+       x = "State",
+       y = "Average Crime Rate") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))  # Rotate x-axis labels
+
+#notes: couldn't figure out how to add the states to the x axis the first time
+``` 
+
+### Module 3
+#### Boxplots and Violon Plots
+
+```{r problem_fix, message=F, warning=FALSE, include=FALSE}
+library(readr)
+library(tidyverse)
+
+CAM <- read_csv("Violin_Plot_Data.csv")
+data_long <- CAM %>%
+  pivot_longer(
+    cols = starts_with("Repeat"),
+    names_to = "Repeat",
+    values_to = "values"
+  )
+min_value <- min(data_long$values, na.rm = TRUE)
+max_value <- max(data_long$values, na.rm = TRUE)
+```
+
+Replica With Half Violin Plot:
+```{r replica_half_violin, message=F, warning=FALSE}
+library(readr)
+CAM <- read_csv("Violin_Plot_Data.csv")
+View(CAM)
+#load all packages needed for this module
+library("ggplot2") 
+library("readr") 
+library("tidyverse")
+library("dplyr") 
+library("ggpubr") 
+library("see")
+library("scales")
+
+#view the data
+head(CAM)
+#Calculate min and max
+min_value <- min(data_long$values, na.rm = TRUE) 
+max_value <- max(data_long$values, na.rm = TRUE)
+
+#give your newly formatted data a name you will recognize, in this case "data_long"
+data_long <- CAM %>%
+  #Pivot the data from having many columns to many rows
+  pivot_longer(
+    cols = starts_with("Repeat"),  # Select columns to pivot
+    names_to = "Repeat", 
+    values_to = "values") #give the newly created column a name
+#view the resulting data
+head(CAM) 
+#calculating min and max 
+ min_value <- min(data_long$values, na.rm = TRUE) 
+max_value <- max(data_long$values, na.rm = TRUE) 
+#writing ggplot2 base data
+ggplot(data_long, aes(x = F1Performance, y = values)) + geom_jitter(size = 6, width = 0.1, height = 0, alpha = NA, aes(color = F1Performance)) + geom_violinhalf() + 
+
+  #add in the color and legend 
+  aes(fill = F1Performance) +
+  #making the color transparent
+  aes(alpha = "0.20", size.f = 2) +
+  #adding quantile lines
+  geom_violinhalf(draw_quantiles = c(0.25, 0.5, 0.75)) + 
+  #flip the axis 
+  coord_flip() + 
+  
+  #changing the color to orange and purple
+  scale_fill_manual(values = c("purple4", "darkorange2")) + 
+  scale_color_manual(values = c("purple4", "darkorange2")) +
+  #add summary statistic and highlight it
+  stat_summary(fun = median, geom = "point", shape = 21, size = 3, fill = "white", color = "black", stroke = 1.5, alpha = NA) + 
+  #changing theme 
+  theme_minimal() +
+  #changing y axis
+  theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank(), axis.line.y = element_blank()) +
+  #changing x axis
+  theme(axis.line.x = element_line(color = "black", size = 2)) + 
+  #changing major and minor grid lines 
+    # Remove major grid lines for y axis
+  theme(panel.grid.major.y = element_blank(),
+      # Remove minor grid lines for x axis
+  panel.grid.minor.x = element_blank(),     
+    #changing the major x axis grid lines
+  panel.grid.major.x = element_line(color = "grey", linetype = "dashed", size = 1.5)) +
+  #adding title
+  theme(plot.title = element_text(hjust = 0.5, face="bold")) + 
+    theme(legend.position = "none") +
+  
+  #adding text labels 
+  geom_text(aes(x = "SVMWithGradCAMMaps", label = "SVM + GRAD-CAM++", y = 0.64), vjust = -3.5, color = "darkorange2", size = 4.5) + 
+  geom_text(aes(x = "SMVWithDeepShapMaps", label = "SMV + Deep SHAP", y = 0.6), vjust = -14, color = "purple4", size = 4.5) +
+  scale_y_continuous(limits = c(min_value, max_value), breaks = seq(min_value, max_value, by = 0.02)) +
+  #adding a title and changing axis name 
+  labs(title = "Fig. 7. Grad-CAM++ saliency maps capture unique predictive information.", face = "bold") +
+  labs(y = "F1")
+  
+#that was really difficult
+    
+```
+
+Replica With Full Violin Plot:
+```{r full_violin, message=F, warning=FALSE}
+library(readr)
+CAM <- read_csv("Violin_Plot_Data.csv")
+View(CAM)
+
+#load all packages needed for this module
+library("ggplot2") 
+library("readr") 
+library("tidyverse")
+library("dplyr") 
+library("ggpubr") 
+library("see")
+library("scales")
+
+#view the data
+head(CAM)
+#Calculate min and max
+min_value <- min(data_long$values, na.rm = TRUE) 
+max_value <- max(data_long$values, na.rm = TRUE)
+
+#give your newly formatted data a name you will recognize, in this case "data_long"
+data_long <- CAM %>%
+  #Pivot the data from having many columns to many rows
+  pivot_longer(
+    cols = starts_with("Repeat"),  # Select columns to pivot
+    names_to = "Repeat", 
+    values_to = "values") #give the newly created column a name
+#view the resulting data
+head(CAM) 
+#calculating min and max 
+ min_value <- min(data_long$values, na.rm = TRUE) 
+max_value <- max(data_long$values, na.rm = TRUE) 
+#writing ggplot2 base data
+ggplot(data_long, aes(x = F1Performance, y = values)) + geom_jitter(size = 6, width = 0.1, height = 0, alpha = NA, aes(color = F1Performance)) + geom_violin() + 
+
+  #add in the color and legend 
+  aes(fill = F1Performance) +
+  #making the color transparent
+  aes(alpha = "0.20", size.f = 2) +
+  #adding quantile lines
+  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75)) + 
+  #flip the axis 
+  coord_flip() + 
+  
+  #changing the color to orange and purple
+  scale_fill_manual(values = c("purple4", "darkorange2")) + 
+  scale_color_manual(values = c("purple4", "darkorange2")) +
+  #add summary statistic and highlight it
+  stat_summary(fun = median, geom = "point", shape = 21, size = 3, fill = "white", color = "black", stroke = 1.5, alpha = NA) + 
+  #changing theme 
+  theme_minimal() +
+  #changing y axis
+  theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank(), axis.line.y = element_blank()) +
+  #changing x axis
+  theme(axis.line.x = element_line(color = "black", size = 2)) + 
+  #changing major and minor grid lines 
+    # Remove major grid lines for y axis
+  theme(panel.grid.major.y = element_blank(),
+      # Remove minor grid lines for x axis
+  panel.grid.minor.x = element_blank(),     
+    #changing the major x axis grid lines
+  panel.grid.major.x = element_line(color = "grey", linetype = "dashed", size = 1.5)) +
+  #adding title
+  theme(plot.title = element_text(hjust = 0.5, face="bold")) + 
+    theme(legend.position = "none") +
+  
+  #adding text labels 
+  geom_text(aes(x = "SVMWithGradCAMMaps", label = "SVM + GRAD-CAM++", y = 0.64), vjust = -3.5, color = "darkorange2", size = 4.5) + 
+  geom_text(aes(x = "SMVWithDeepShapMaps", label = "SMV + Deep SHAP", y = 0.6), vjust = -14, color = "purple4", size = 4.5) +
+  scale_y_continuous(limits = c(min_value, max_value), breaks = seq(min_value, max_value, by = 0.02)) +
+  #adding a title and changing axis name 
+  labs(title = "Fig. 7. Grad-CAM++ saliency maps capture unique predictive information.", face = "bold") +
+  labs(y = "F1")
+  
+```
+
+Module 3 Challenge Violin Plus Box Plot: 
+```{r challenge_plot, message=F, warning=FALSE}
+# libraries
+library("rmarkdown")
+library("knitr")
+
+# libraries 
+library("ggplot2") 
+library("readr") 
+library("tidyverse")
+library("dplyr") 
+library("ggpubr") 
+library("see")
+library("scales") 
+library("hrbrthemes") 
+library(readr)
+
+CAM <- read_csv("Violin_Plot_Data.csv")
+View(CAM)
+
+# calculate min and max values
+min_value <- min(data_long$values, na.rm = TRUE) 
+max_value <- max(data_long$values, na.rm = TRUE)
+
+# make the data long format 
+data_long <- CAM %>%
+  #Pivot the data from having many columns to many rows
+  pivot_longer(
+    cols = starts_with("Repeat"),  # Select columns to pivot
+    names_to = "Repeat", 
+    values_to = "values") #give the newly created column a name
+head(data_long)
+
+# create the base ggplot
+ggplot(data_long, aes(x = F1Performance, y = values)) + 
+  # add data points 
+  geom_jitter(size = 5, width = 0.1, height = 0, alpha = NA) +
+  # add violin and boxplot 
+  geom_violin(aes(fill = F1Performance, alpha = 0.2)) +
+  geom_boxplot(width = 0.3, aes(color_fill_manual = "grey", alpha = 0.2)) + 
+  # add a mean point 
+  stat_summary(fun = median, geom = "point", shape = 21, size = 3, fill = "white", color = "black", stroke = 1.5, alpha = NA) + 
+  # changing theme 
+  theme_classic() + 
+  theme(legend.position = "none") + 
+  theme(axis.title.y = element_blank()) + 
+  labs(title = "Fig. 7. Grad-CAM++ saliency maps capture unique predictive information.") 
+  
+  
+# doing this a second time was a little easier 
+
+```
+
+### Module 4 
+#### Barplots and Error Bars
+
+mtcars Barplot with Error Bars:
+```{r barplots_and_errorbars, message=F, warning=FALSE}
+
+# libraries
+library(ggplot2)
+library(dplyr)
+mean_mpg <- mean(mtcars$mpg)
+
+# Task 1
+# load data set mtcars 
+data(mtcars)
+head(mtcars)
+group_data <- mtcars %>% group_by(cyl)
+summary(mtcars)
+# calculating mean 
+mean_mpg <- mean(mtcars$mpg) + 
+  print(mean_mpg)
+# mean_mpg = 20.0962
+# calculating Standard Error from SD 
+sd_mpg <- sd(mtcars$mpg, na.rm = TRUE) 
+# creating a sample size vriable 
+n <- sum(!is.na(mtcars$mpg))
+se_mpg <- sd_mpg / sqrt(n)
+print(se_mpg)
+# SE_mpg = 1.065
+# summarize data in new dataframe 
+data_summary <- mtcars %>% group_by(cyl) %>% summarise(se_mpg = sd_mpg / sqrt(n), mean_mpg = mean(mpg))
+print(data_summary)
+
+# Task 2 creating a bar plot 
+ggplot(data_summary, aes(x = factor(cyl), y = mean_mpg,)) + geom_col(fill = c("skyblue", "orange", "green"), width = 0.7) +
+  geom_errorbar(aes(ymin = mean_mpg - se_mpg, ymax = mean_mpg + se_mpg), width = 0.25, size = 2) + 
+  theme_classic() + 
+  labs(title = "Bar Plot of Mean MPG by Cylinders", x = "Number of Cylinders", y = "Mean MPG")
+  
+#messed up on the summary stats at first but fixed it 
+
+```  
+
+### Module 5 
+#### Density Plots, Histograms and Frequency Polygons
+ 
+2D Density Graphics Plot:
+```{r chunk 1, message=F, warning=FALSE}
+# load packages 
+library(readr)
+library(ggplot2)
+library(dplyr)
+# read in csv and rename it via import dataset function
+library(readr)
+population_data <- read_csv("log_population_data.csv") 
+View(population_data) 
+head(population_data)
+# create the density plot
+ggplot(population_data, aes(x = Log10_Current_Population, y = Log10_Past_Population)) +
+  stat_density_2d(aes(fill = after_stat(level)), geom = "polygon", color = "white") +
+  scale_fill_gradient(low = "darkblue", high = "skyblue", name = "level") + 
+  # I couldn't figure out how to use the scale_fill_distiller function so I used a differnt one
+  
+  theme_minimal() + 
+  labs(title = "2D Density Plot of Population Sizes", x = "Log10(Current population size N0", y = "Log10(Past population ize N1)") 
+```
+
+Adding Density Plot To The Margins of A Different Plot:
+```{r chunk 2, message=FALSE, warning=FALSE}
+library(readr)
+library(ggplot2)
+library(dplyr)
+library(ggExtra)
+library(readr)
+longevity_data <- read_csv("longevity_data.csv")
+View(longevity_data)
+head(longevity_data)
+# put the data into log format
+long <- longevity_data %>% #create a new dataframe called "long" that contains all your newly calculated variables
+  mutate( #mutate tells the program to perform new calculations
+    log_mass = log10(mass_g),                          # create a new column called "log_mass" which Log-transforms mass values
+    log_lifespan = log10(maximum_lifespan_yr))  %>%          # create a new colummn called "log_lifespan" that Log-transforms lifespan value
+   group_by(order) %>%        # this tells it that after "mutate", you are going to start a new function. for each "order" or group of animals    
+  mutate(order_size = n())      #calculate the sample size of each order and put it in a column called "order_size". 
+
+#Now you have a sample size for each order, and you have transformed each mass and lifespan value to log form. 
+
+head(long)
+# create a dotplot 
+p = ggplot(long, aes(x =log_mass, y = log_lifespan, color = class, size = order_size)) + 
+  #makign the points transparent by 30%
+  geom_point(alpha = 0.3) +
+  #regression line
+  geom_smooth(method = "lm", se = FALSE, linetype = "solid", aes(color = class)) +
+  # change the color scheme
+  scale_color_manual(values = c("lightgreen", "darkslategray")) + 
+  # change labels and theme
+  labs(title = "Bubble Chart of Longevity and Body Mass", x = "Log (Body Mass [g])", y = "Log (Maximum Lifespan [yr])") + 
+  theme_minimal() + 
+  # remove legends 
+  theme(legend.position = "none") +
+  # changing axis and title labels theme 
+  theme(plot.title = element_text(size = 12, face = "bold"), 
+        axis.title.x = element_text(size = 12, face = "bold"), 
+        axis.title.y = element_text(size = 12, face = "bold")) + 
+  # add text annotations inside the graph
+  annotate("text", label = "Aves", x = 5.6, y = 1.9, color = "lightgreen", size = 5, face = "bold") + 
+  annotate("text", label = "Mammals", x = 6.5, y = 1.4, color = "darkslategray", size = 5, face = "bold")
+
+ggExtra::ggMarginal(p, type = "density", groupFill = TRUE, alpha = 0.4)
+
+```
+
+Interpretation Questions: 
+1) adding the density plots in the margins adds another visualization tool that
+shows how the different classes are distributed in the x and y axis. 
+
+2) 
+  1: log mass plotted on the x axis.
+  2: log lifespan plotted on the y axis.
+  3: making the classes differnet colors.
+  4: order size depicts the sample size of the populations.
+  5: transparency adds a visual aid allowing you to see more dense populations.
+  6: marginal density plots add another visual to detemrine where populations 
+  are the most dense.
+  6 1/2: regression lines show the trend of the two classes.
+
+3) the more body mass = longer lifespan. More extreme in Aves as seen by the 
+trendlines.
+
+4) for Aves, there are more samples in the lower left of the graph (low body mass and short lifespan), compared to other areas of the graph. This could be a possible bias since most of the data collected was of that low body mass and short lifespan category. The same can be sais for the Mammals where the data is more accumulated towards a high lifespan and body mass. 
+
+5) We could use the dodge function to create 2 side-by-side graphs that might make the graph easier to read. Or, we could change "se = TRUE" to show error along the trend lines. 
+
+Create Your Own Plot Challenge:
+```{r chunk 3, message=FALSE, warning=FALSE}
+# load packages 
+library(ggplot2)
+library(dplyr)
+library(ggExtra)
+# using CO2 dataset 
+data("CO2")
+head(CO2)
+
+p1 = ggplot(CO2, aes(x = conc, y = uptake, color = Plant, fill = Treatment, linetype = Treatment)) +
+  # Line plot for trends
+  geom_point(aes(group = interaction(Plant, Treatment)), size = 1, alpha = 0.8) + geom_line() +
+  # set theme 
+  theme_minimal() + theme(legend.position = "bottom") +
+  # set labels 
+  labs(title = "CO2 Uptake Across Plant Origin, Treatment, and Concentration", x = "Concentration of CO2(mL/L)", y = "Uptake of CO2 (μmol/m^2 sec)") + 
+  theme(plot.title = element_text(face = "bold"), 
+        plot.title.x = element_text(face = "bold"), 
+        plot.title.y = element_text(face = "bold"))  
+  ggMarginal(p1, type = "density", groupFill = TRUE, alpha = 0.4) 
+``` 
+
+### Module 6 
+#### Integrating Multiple Charts
+ 
+Module 6 Notes:
+export a figure as a pdf, eps, or png: 
+ggexport(figure, filename, "figure1.pdf", nrow = 2, ncol = 1) 
+
+to save a plot in r: 
+save_plot("plot name.pdf", plot name, ncol = x, nrow = 2, base_aspect_ratio = 1.4) # always 1.4 to add room for legend
+
+Chick Weight Plot Code:
+```{r chick_plot_code, message=FALSE, warning = FALSE}
+# load libraries
+library(ggplot2)   # facet_grid(), facet_wrap() for creating multiple figures with the same axis  
+library(cowplot)   # plot_grid() and draw_plot(plot, x = , y = , width = , height = )
+library(gridExtra) # grid.arrange()
+library(ggpubr)    # ggarrange() easiest to use
+library(patchwork) # plot_layout()
+library(dplyr)
+
+
+
+# load dataset 
+
+data(ChickWeight)
+head(ChickWeight)
+
+# summary statistics
+summary(ChickWeight)
+
+
+# create plot   
+p <- ggplot(ChickWeight, aes(x = Time, y = weight, color = Chick, alpha = 0.1)) + geom_line() +
+
+# regressChickWeight# regression line 
+geom_smooth(color = "black", size = 1.2) +
+  
+# labels 
+labs(title = "Chick Growth by Diet Type", x = "Time (Days)", y = "Weight (Grams)") +
+  
+# theme and legend
+theme_minimal() + theme(legend.position = "none") +
+  
+# facet wrap 
+facet_wrap(vars(Diet), ncol = 4, nrow = 1) 
+
+```
+
+Output of Chick Plot:
+```{r plot_p, message=FALSE, warning=FALSE}
+plot(p)
+``` 
+
+Multipanel Figure Plot:
+```{r multipanel_plot, message=FALSE, warning = FALSE}
+# load packages 
+library(dplyr)
+library(ggplot2)   # facet_grid(), facet_wrap() for creating multiple figures with the same axis  
+library(cowplot)   # plot_grid() and draw_plot(plot, x = , y = , width = , height = )
+library(gridExtra) # grid.arrange()
+library(ggpubr)    # ggarrange() easiest to use
+library(patchwork) # plot_layout()
+# load data befor each plot  
+data(CO2)
+head(CO2)
+
+# 1. violin plot
+v <- ggplot(CO2, aes(x = Treatment, y = uptake, alpha = 0.4, fill = Type)) +
+  geom_jitter(size = 3, alpha = NA, position = position_jitterdodge(jitter.width = 0.2, dodge.width = 1)) +
+  geom_violin(position = position_dodge(1), aes(alpha = 0.2)) + 
+  geom_boxplot(width = 0.3, position = position_dodge(1), aes(color_fill_manual = "grey", alpha = 0.2)) + 
+# i don't know why i can't change the fill of my boxplots to be grey
+
+  # labels 
+labs(title = "CO2 Uptake of Different Plant Type by Treatment", x = "Treatment", y = "CO2 Uptake (μmol/m^2 sec)") + 
+  
+  # theme # theme Type
+theme_classic() + theme(plot.title = element_text(face = "bold"), 
+                        axis.title.x = element_text(face = "bold"), 
+                        axis.title.y = element_text(face = "bold")) +
+  
+# remove alpha legend
+guides(alpha = "none")
+v
+
+
+
+# 2. Line plot 
+l <- ggplot(CO2, aes(x = conc, y = uptake)) + geom_line(aes(color = Treatment, fill = Treatment, size = 2, alpha = 0.8)) +
+  
+  # facet 
+facet_grid(cols = vars(Type)) +
+  
+# labels 
+labs(title = "Ambient CO2 Uptake in Different Areas and CO2 Concentration by Treatment", x = "CO2 Concentration (mL/L)", y = "CO2 Uptake (μmol/m^2 sec)") +
+
+# themes 
+theme_minimal() + 
+  theme(plot.title = element_text(face = "bold", hjust = 0.5), 
+                        axis.title = element_text(face = "bold")) +
+
+# remove alpha and size legend
+guides(alpha = "none", size = "none")
+l
+
+
+
+# 3. density plot with a vertical dashed line at mean
+
+# create the plot 
+d <- ggplot(CO2, aes(x = uptake, fill = Treatment)) +
+  geom_density(alpha = 0.5) +  
+  
+# add a vertical line at mean 
+geom_vline(aes(xintercept = mean(uptake, na.rm = TRUE)), 
+             linetype = "dashed", color = "black", size = 1) +  
+  
+# labels 
+labs(title = "Density Plot of CO2 Uptake by Treatment with Mean Line", x = "CO2 Uptake", y = "Density") +
+
+# theme 
+  theme_minimal() + theme(plot.title = element_text(face = "bold"), 
+                          title.axis = element_text(face = "bold"))
+
+d
+
+
+# combine plots into one figure 
+
+multipanel_plot1 <- plot_grid(
+  v + theme(plot.title = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank()),
+  l + theme(plot.title = element_blank(), axis.title = element_blank()),
+  d + theme(plot.title = element_blank(), axis.title = element_blank()),
+  ncol = 1,                        # Arrange in 1 column
+  labels = c("A", "B", "C"),       # Add labels to each plot
+  label_size = 13, 
+  label_y = c(1.03, 1.05, 1.12), 
+  rel_heights = c(1.2, 1, 0.9))
+
+# print multipanel_plot1
+multipanel_plot1
+```
+
+## Final Project Part 2 {.tabset .tabset-fade}
+#### This section includes 5 tabs, each includong data visualization of 3 datasets giving different insights into current COVID-19 case data in Maryland and St. Mary's County. Links to the Maryland.gov webpage with the specific datasets used in each data visualization are provided at the start of each tab. 
+
+### Maryland COVID-19 Cases by County
+#### Maryland COVID-19 Cases by County
+
+Link to data: https://opendata.maryland.gov/d/tm86-dujs
+```{r County, message=F, warning=F}
+# libraries 
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(readr)
+library(tidyverse)
+library(ggExtra)
+
+# load dataset
+data <- read.csv("mdcovid_cases_by_county.csv")
+
+# convert DATE to proper format
+data$DATE <- as.Date(data$DATE, format = "%m/%d/%Y")
+
+# select relevant columns
+selected_data <- data[, c("DATE", "St_Marys", "Calvert", "Charles")]
+
+# convert data to long format
+long_data <- pivot_longer(selected_data, 
+                          cols = c(St_Marys, Calvert, Charles), 
+                          names_to = "County", 
+                          values_to = "Cases")
+
+# create the plot
+countyp <- ggplot(long_data, aes(x = DATE, y = Cases)) +
+  geom_point(aes(color = County)) +
+
+# labels
+  labs(title = "COVID-19 Cases in St. Mary's, Calvert, and Charles Counties",
+       x = "Date",
+       y = "Number of Cases",
+       color = "County") +
+# theme 
+  theme_minimal() + theme(plot.title = element_text(face = "bold"))  + theme(legend.position = c(0.1,0.81), 
+                                                                             legend.title = element_text(size = 13), 
+                                                                             legend.background = element_rect(fill = "white", color = "black"))
+  
+# add margin density plot 
+  ggMarginal(countyp, type = "density", margins = "y", groupColour = TRUE, groupFill = TRUE)
+
+```
+
+### Maryland COVID-19 Cases by Age Group
+#### Maryland COVID-19 Cases by Age Group
+
+Link to data: https://opendata.maryland.gov/d/sjqg-bqsu
+```{r Age, message=F, warning=F}
+# libraries 
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(readr)
+library(tidyverse)
+library(ggExtra)
+# read in the data 
+data <- read.csv("mdcovid_cases_by_age.csv")
+
+# remove the "Age_Unknown" column
+age <- data[, !names(data) %in% c("Age_Unknown")]
+
+# gather the data into a long format for ggplot2
+age <- data %>%
+  select(-c(OBJECTID, DATE)) %>%
+  gather(key = "Age_Group", value = "Cases")
+
+# create the histogram plot
+agep <- ggplot(age, aes(x = Age_Group, y = Cases, fill = Age_Group)) +
+  geom_bar(stat = "identity") +
+
+  # add labels 
+  labs(title = "COVID-19 Cases by Age Group", x = "Age Group", y = "Number of Cases") +
+
+  # change theme
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+
+# print plot 
+agep
+
+```
+
+### Maryland COVID-19 Cases by Gender
+#### Maryland COVID-19 Cases by Gender
+
+Link to data: https://opendata.maryland.gov/d/py3p-2bgq
+```{r Gender, message=F, warning=F}
+# libraries 
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(readr)
+library(tidyverse)
+library(ggExtra)
+
+# read in the dataset
+data <- read.csv("mdcovid_cases_by_gender.csv")
+
+# remove the "Unknown" column because it has no data
+data <- data[, !names(data) %in% c("Unknown")]
+
+# convert the data into a long format
+long_data <- data %>%
+  select(-c(OBJECTID, DATE)) %>%
+  pivot_longer(cols = everything(), names_to = "Gender", values_to = "Cases")
+
+# make sure data is in long format 
+print(head(long_data))
+
+# create the violin plot combined with boxplot and jitter
+pgender <- ggplot(long_data, aes(x = Gender, y = Cases, fill = Gender)) +
+  geom_jitter(size = 2, width = 0.1, alpha = 0.9) +
+  geom_violin(trim = FALSE, alpha = 0.6) +
+  geom_boxplot(width = 0.2, outlier.shape = NA, alpha = 0.6) +
+  
+# labels
+  labs(title = "COVID-19 Cases by Gender", x = "Gender", y = "Number of Cases") +
+
+# theme
+  theme_minimal() +
+  theme(legend.position = "none", plot.title = element_text(face = "bold"))
+
+# Print the gender plot
+pgender
+
+
+```
+
+### Maryland COVID-19 Cases by Ethnicity
+#### Maryland COVID-19 Cases by Ethnicity
+
+Link to data: https://opendata.maryland.gov/d/xnfm-sgpt 
+```{r Ethnicity, message=F, warning=F}
+# libraries 
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(readr)
+library(tidyverse)
+library(ggExtra)
+
+# read in the dataset
+data <- read.csv("mdcovid_cases_by_ethnicity.csv")
+
+# select the most recent data (last row of the dataset)
+latest_data <- tail(data, 1)
+
+# remove out of date columns
+ethnicity_data <- latest_data[, c("African_American", "White", "Hispanic", "Asian", "Other")]
+
+# calculate the percentage for each ethnicity
+ethnicity_percent <- colSums(ethnicity_data) / sum(ethnicity_data) * 100
+
+# prepare data for plotting
+ethnicity_df <- data.frame(
+  Ethnicity = names(ethnicity_percent),
+  Percentage = ethnicity_percent
+)
+
+# create the pie chart
+ethp <- ggplot(ethnicity_df, aes(x = "", y = Percentage, fill = Ethnicity)) +
+  geom_bar(stat = "identity", width = 1) +
+
+# this actually makes the bar graph into a pie chart
+  coord_polar("y", start = 0) +
+
+# adds the percentages 
+  geom_text(aes(label = sprintf("%.1f%%", Percentage)), 
+            position = position_stack(vjust = 0.5), 
+            size = 4) +
+
+# labels
+  labs(title = "COVID-19 Cases by Ethnicity") +
+
+# theme
+  theme_void() +
+  theme(legend.position = "right", plot.title = element_text(face = "bold")) +
+  scale_fill_brewer(palette = "Set3")
+
+# print plot 
+ethp
+
+```
+
+### Multipanel Plot of Maryland COVID-19 Cases by Age Group, Gender, and Ethnicity
+#### This is a multipanel plot of maryland COVID-19 cases by age group, gender, and ethnicity. Seperate plots can be found in the previouse tabs along with the link from which the data was aquired.  
+
+```{r Multipanel, message=F, warning=F}
+# libraries 
+library(ggplot2)
+library(tidyr)
+library(cowplot)
+
+
+multipanel_plot <- plot_grid(
+  agep + theme(plot.title = element_blank(), axis.title.x = element_blank(), axis.title.y = element_blank()),
+  ethp + theme(plot.title = element_blank(), axis.title = element_blank()),
+  pgender + theme(plot.title = element_blank(), axis.title = element_blank()),
+  ncol = 2,                        # Arrange 2 column
+  labels = c("A", "C", "B"),       # Add labels to each plot
+  label_size = 12, 
+  label_y = c(1, 1, 1.05),
+  rel_heights = c(1, 1, 1))
+
+#print multipanel plot
+multipanel_plot
+
+```
